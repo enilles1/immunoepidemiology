@@ -1,0 +1,767 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+```{r}
+library(readr)
+library(visreg)
+library(mgcv)
+library(splines)
+library(ggplot2)
+library(dplyr)
+ library(tidyr)
+library(grid)
+#library(pdp)
+library(randomForest)
+library(caret)
+library(patchwork)
+library(jtools)
+library(ggforce)
+library(ggrepel)
+library(ggridges)
+library(ggpubr)
+
+```
+# Load data
+```{r}
+# Loading the necessary library
+library(readr)
+
+# File path
+file_path <- "/Users/ericnilles/Dropbox (Personal)/Dropbox/Cohort Data/Science_df.csv"
+
+# Reading the CSV file into the dataframe dfx
+dfx <- read_csv(file_path)
+
+
+```
+# Fig 1
+```{r fig.height=4, fig.width=12}
+
+theme_set(theme_pubr())
+
+# Select and reshape
+long_data <- dfx %>%
+  select(cohort_ID, age, gender, s_titer_orig_log, s_titer_log) %>%
+  pivot_longer(cols = starts_with("s_titer"), names_to = "ind", values_to = "values") %>%
+  filter(!is.na(values) & values != '-Inf')
+
+# Convert ind to factor
+long_data$ind <- factor(long_data$ind, levels = c('s_titer_log', 's_titer_orig_log'))
+
+# Labels
+scale_labels <- c("10^-1", "10^0", "10^1", "10^2", "10^3", "10^4", "10^5")
+
+# Plot
+overall_ridge_plot <- ggplot(long_data, aes(x = values, y = ind)) +
+  geom_density_ridges_gradient(aes(fill = ind), quantile_lines = TRUE, quantiles = 2) +
+  scale_fill_manual(values = c("#00AFBB", "#E7B800")) +
+  scale_y_discrete(name = '', labels = c('S1', 'S2'), limits = rev, expand = expansion(add = c(0, 1.4))) +
+  scale_x_continuous(name = 'Anti-S titer (BAU/ml)', breaks = c(-1, 0, 1, 2, 3, 4, 5), labels = scale_labels) +
+  theme_ridges(grid = FALSE, font_size = 14) +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        legend.position = "none",
+        strip.text.x = element_text(face = 'bold'),
+        strip.text.y = element_text(face = 'bold'),
+        axis.text = element_text(size = 7),
+        axis.title = element_text(size = 8),
+        panel.background = element_rect(fill = "white", colour = "black"),
+        axis.ticks.x = element_line(size = 0.5))
+
+
+overall_ridge_plot
+
+
+```
+
+# Fig 2
+```{r}
+dfx <- dfx %>%
+  mutate(group = cut(s_titer_orig_log,
+                     breaks = c(-Inf, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, Inf),
+                     right = FALSE))
+
+x_labels <- c('<1', '1-1.4', '1.5-1.9', '2-2.4', '2.5-2.9', '3-3.4', '3.5-3.9', '4-4.4', '4.5+')
+
+# Reshape
+long_dfx <- dfx %>%
+  dplyr::select(cohort_ID, group, s_titer_orig_log, s_titer_log) %>%
+  tidyr::pivot_longer(cols = c(s_titer_orig_log, s_titer_log), names_to = "variable", values_to = "value")
+
+# Prepare df for plotting
+line_data <- dfx %>%
+  group_by(cohort_ID, group) %>%
+  summarize(
+    orig = first(s_titer_orig_log),
+    log = first(s_titer_log),
+    .groups = "drop"
+  )
+
+# Group medians
+medians <- dfx %>%
+  group_by(group) %>%
+  summarize(
+    median_orig = median(s_titer_orig_log, na.rm = TRUE),
+    median_log = median(s_titer_log, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# df for median connecting lines
+median_lines <- medians %>%
+  mutate(group_numeric = as.numeric(group)) %>%
+  select(group_numeric, median_orig, median_log)
+
+# Overall plot
+plot <- ggplot(long_dfx, aes(x = as.numeric(group), y = value)) +
+  geom_point(aes(x = as.numeric(group) + ifelse(variable == "s_titer_log", 0.2, -0.2), fill = variable), 
+             position = position_jitterdodge(jitter.width = 0.1, dodge.width = 0.1), size = 1.5, alpha = 0.3, shape = 21, color = "white") +
+  scale_fill_manual(values = c("s_titer_orig_log" = "#E7B800", "s_titer_log" = "#00AFBB"), labels = c("Follow-up", "Baseline")) +
+  scale_linetype_manual(values = c("s_titer_orig_log" = "solid", "s_titer_log" = "solid")) +
+  theme_classic() +
+  labs(x = "Baseline S-antibody level, log10 (BAU/ml)", 
+       y = "S-antibody level, log10 (BAU/ml)") +
+  theme(panel.grid.major = element_blank(),
+        legend.position = c(0.9, 0.13),
+        legend.background = element_rect(color = "black", size = 0.5)) +
+  guides(fill = guide_legend(title = "Sampling timepoint"), linetype = guide_legend(title = "Variable")) +
+  scale_x_continuous(breaks = 1:length(x_labels), labels = x_labels) +
+  geom_hline(yintercept = 3.74, linetype = "dashed", color = "red", size = 0.3)  # Adding the dashed red line
+
+# Median lines and arrows
+plot <- plot + geom_errorbar(data = medians, aes(x = as.numeric(group) - 0.2, ymin = median_orig, ymax = median_orig), 
+                             width = 0.15, size = 0.9, color = "black", inherit.aes = FALSE)
+plot_overall <- plot + 
+  geom_segment(data = median_lines, 
+               aes(x = group_numeric - 0.2, y = median_orig, 
+                   xend = group_numeric + 0.2, yend = median_log), 
+               color = "black", size = 0.5,
+               arrow = arrow(type = "closed", length = unit(0.1, "inches")))
+
+print(plot_overall)
+```
+# Fig 3
+
+## Fig 3A
+```{r}
+
+# Create list of subsets and corresponding titles
+data_list <- list(dfx, 
+                  dfx %>% filter(vacc_dose_interval == 0), 
+                  dfx %>% filter(vacc_dose_interval == 1), 
+                  dfx %>% filter(vacc_dose_interval == 2), 
+                  dfx %>% filter(vacc_dose_interval == 3))
+
+create_ggpaired_plot <- function(data, title, y_name = NULL, show_y_ticks = TRUE) {
+  
+  # Create a new column indicating whether the change is positive or negative
+  data <- data %>% 
+    mutate(change_direction = ifelse(s_titer_log > s_titer_orig_log, "Positive", "Negative"))
+  
+  # Reshape
+  data_melt <- data %>% 
+    dplyr::select(cohort_ID, s_titer_log, s_titer_orig_log, change_direction) %>% 
+    gather(key = "condition", value = "value", -cohort_ID, -change_direction)
+  
+plot <- ggplot(data_melt, aes(x = condition, y = value)) +
+    geom_point(aes(color = condition), position = position_dodge(1.1), size = 0.1, alpha = 1) +
+    geom_line(aes(group = interaction(cohort_ID, change_direction), color = change_direction), position = position_nudge(x = 0), linewidth = 0.07, alpha = 0.4) +
+    geom_boxplot(aes(fill = condition), width = 0.3, alpha = 0.7, position = position_dodge(0.3)) +
+    scale_color_manual(values = c( "Negative" = "darkred", "Positive" = "darkgreen")) +
+     theme_minimal()+
+     scale_x_discrete(name = NULL, labels = c('S1', 'S2'), limits = rev)+
+     scale_y_continuous(name = ifelse(is.null(y_name), "", y_name),
+                        breaks = c(-1, 0, 1, 2, 3, 4, 5),
+                        labels = c(xx0, xx1, xx2, xx3, xx4, xx5, xx6))+
+     theme(panel.grid.major.x = element_blank(),
+           panel.grid.minor.x = element_blank(),
+           panel.grid.major.y = element_blank(),
+           legend.position = "none",
+           axis.ticks.y = if (show_y_ticks) { element_line(size = 0.5) } else { element_blank() },
+           panel.spacing = unit(1.5, "lines"),
+           axis.text.x = element_text(size = 9),
+           axis.text.y = if (show_y_ticks) { element_text(size = 9) } else { element_blank() },
+           axis.title.y = if (show_y_ticks) { element_text(size = 9) } else { element_blank() },
+           axis.title.x = element_text(size = 9),
+           plot.title = element_text(hjust = 0.5, size = 10, face = 'bold'))+
+     scale_fill_manual(values = c("#00AFBB", "#E7B800"))+
+     coord_cartesian(ylim = c(-0.5, 5.1))+
+     ggtitle(title)
+   
+   return(plot)
+}
+
+y_names <- c('Log S titer', NULL, NULL, NULL, NULL)
+
+# Define titles
+titles <- c("Overall", "Interval vacc = 0", "Interval vacc = 1", "Interval vacc = 2", "Interval vacc = 3")
+
+# Create plots for all data frames
+plots <- list()
+
+for (i in seq_along(data_list)) {
+  plots[[i]] <- create_ggpaired_plot(data_list[[i]], titles[i], y_names[i], show_y_ticks = (i == 1))
+}
+
+# Create the plot for the overall data
+fig2a <- create_ggpaired_plot(dfx, NULL, 'Log S titer', TRUE)
+
+# Display the plot
+print(fig2a)
+
+```
+## Fig 3B
+```{r}
+# Filter out values <0, calculate % change
+dfx_filtered <- dfx %>%
+  filter(s_titer_orig_log >0)%>%
+   mutate(
+      perc_change_log =(s_titer_log - s_titer_orig_log) / s_titer_orig_log
+    )
+  # PLot
+  fig3b <- ggplot(dfx_filtered, aes(x = s_titer_orig_log, y = perc_change_log)) +
+    geom_point(aes(color = "Observed"), alpha = 0.6, size = 0.4) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "red", size = 0.5) + 
+    geom_smooth(method = "loess", color = "darkblue",span = 0.2, size = 0.7) +  # Add a loess smoothing line
+    labs(title = NULL,
+         x = "Log baseline S titer",
+         y = "Fold Change S titer") +
+    scale_color_manual(values = c("Observed" = "darkgray", "Predicted" = NULL)) +
+    theme_classic() +
+    theme(
+      axis.text.x = element_text(size = 9),
+      axis.text.y = element_text(size = 9),
+      axis.title.y = element_text(size = 10),
+      axis.title.x = element_text(size = 10),
+      plot.title = element_text(hjust = 0.5, size = 10, face = 'bold')
+    ) +
+    theme(legend.position = "none") +
+    ylim(-1, 10)+
+       xlim(-1, 5.5)+
+     scale_x_continuous(
+                        breaks = c(-1, 0, 1, 2, 3, 4, 5),
+                        labels = c(xx0, xx1, xx2, xx3, xx4, xx5, xx6)) 
+
+  # Display the overall plot
+  print(fig3b)
+
+```
+## Fig 3C
+```{r}
+
+create_gam_model <- function(data) {
+  model <- mgcv::gam(change_log ~ ns(s_titer_orig_log, df=2) +
+                       n_titer_orig_log +
+                       age +
+                       gender +
+                      setting +
+                       vacc_dose_preinterval +
+                       dpv_cohort +
+                       interval,
+                     data = data)
+  return(model)
+}
+
+
+create_plot <- function(model, title_text, model_data) {
+  # Compute the predicted values
+  model_data$predicted_change_log <- predict(model, newdata = model_data)
+  
+  # Create the plot
+  plot_obj <- ggplot(model_data, aes(x = s_titer_orig_log, y = predicted_change_log)) +
+    geom_point(aes(fill = 'gray'), size = 1, alpha = 0.1) +
+    geom_smooth(method = "gam", formula = y ~ s(x, bs = "cs"), color = "blue") +
+    labs(title = title_text, 
+         x = "Log baseline S titer", 
+         y = 'Modeled change in S titer') +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red", size = 0.5) + 
+    theme_classic() +
+    theme(
+      axis.text.x = element_text(size = 7),
+      axis.text.y = element_text(size = 7),
+      axis.title.y = element_text(size = 7),
+      axis.title.x = element_text(size = 7),
+      plot.title = element_text(hjust = 0.5, size = 8, face = 'bold'),
+                     legend.position = "none")+
+       scale_x_continuous(
+                        breaks = c(-1, 0, 1, 2, 3, 4, 5),
+                        labels = c(xx0, xx1, xx2, xx3, xx4, xx5, xx6))+ 
+      scale_y_continuous(
+                        breaks = c(-2, 0, 2, 4),
+                        labels = c(xx,xx1, xx3, xx5))+  
+    coord_cartesian(ylim = c(-2.2, 5), xlim = c(-0.5, 5.2))
+  
+  return(plot_obj)
+}
+
+    overall_model <- create_gam_model(dfx)
+    overall_plot <- create_plot(overall_model, "Overall", dfx)
+    print(overall_plot)  # Display the plot
+
+```
+
+## Fig 3D
+```{r}
+
+# Extract PCA scores for obs
+pca_scores <- as.data.frame(pca_result$x)
+
+# Extract PCA loadings forvariables
+pca_loadings <- as.data.frame(pca_result$rotation)
+
+# Label coordinates
+label_coordinates <- data.frame(
+  variable = c("S-titer change", "Baseline S-titer", "Baseline N-titer", "Age", "Baseline vacc doses", "Interval vacc doses", "DPV"),
+  x = c(2.7, -2.8,  -2.4,   -0.1, -2.45,    2.2,     -0.7),
+  y = c(-1,   0.9,     1.3,   -1.3, -1.4,   1.6,    -1.7)
+)
+
+# New column to pca_loadings for merging
+pca_loadings$variable <- rownames(pca_loadings)
+
+# Merge coord with pca_loadings
+pca_loadings <- merge(pca_loadings, label_coordinates, by = "variable")
+
+# Scatter plot
+pca_scatter <- ggplot(pca_scores, aes(x = PC1, y = PC2)) + 
+  geom_point(aes(color = dfx$vacc_dose_interval_factor), size = 0.5, alpha = 0.3) +
+  scale_color_discrete(name = "Interval Vacc Dose") +
+  coord_cartesian(ylim = c(-4, 6), xlim = c(-3.5, 5)) + 
+  labs(x = "PC1", y = "PC2") +
+  theme_classic() +
+  theme(legend.position = c(1, 1.18), 
+        legend.justification = c(1, 1), 
+        legend.background = element_rect(fill="white", colour="black"),
+        legend.text = element_text(size = 5),
+        legend.title = element_text(size = 5),
+        axis.title.x = element_text(size = 9),  
+        axis.title.y = element_text(size = 9)) + 
+  guides(colour = guide_legend(override.aes = list(alpha = 1), direction = "horizontal")) 
+
+# 95% confidence ellipses
+pca_scatter <- pca_scatter + 
+  stat_ellipse(data = pca_scores, aes(x = PC1, y = PC2, group = dfx$vacc_dose_interval_factor, color = dfx$vacc_dose_interval_factor), level = 0.95, geom = "polygon", fill = NA, linetype = 1, size = 0.25)
+
+# Arrows for PCA loadings
+arrow_length <- 3 
+burnt_orange <- "#CC5500"
+pca_scatter <- pca_scatter + 
+  geom_segment(data = pca_loadings, aes(x = 0, y = 0, xend = PC1 * arrow_length, yend = PC2 * arrow_length),
+               arrow = arrow(type = "closed", length = unit(0.05, "inches")), color = burnt_orange, size = 0.4)
+
+# Adjust the label positioning 
+pca_loadings$hjust <- ifelse(pca_loadings$PC1 > 0, 0, 1) 
+pca_loadings$vjust <- ifelse(pca_loadings$PC2 > 0, -0.5, 1.5)
+
+# Add labels for PCA loadings with manual coords
+pca_biplot <- pca_scatter + 
+  geom_text(data = pca_loadings, 
+            aes(x = x, y = y, label = variable),
+            color = 'black', size = 1.9)
+
+pca_biplot <- pca_biplot + 
+  theme(plot.margin = unit(c(0, 0.5, -0.5, -0.5), "cm")) # top, right, bottom, left
+
+pca_biplot <- pca_biplot + 
+  theme(legend.background = element_blank(), 
+        legend.key = element_blank(),  
+        legend.title = element_text(size = 6, face = "plain"),  
+        legend.text = element_text(size = 5)) 
+
+
+print(pca_biplot)
+
+ggsave("PCA.png", pca_biplot, width = 3, height = 3, units = "in")
+
+```
+### Cross validation
+```{r}
+
+# ----------------------------
+# Method 1: Region-based cross-validation
+# ----------------------------
+
+# Training set (se)
+train_set <- dfx[dfx$region == 'se', ]
+
+# Test set (nw)
+test_set <- dfx[dfx$region == 'nw', ]
+test_set <- test_set[test_set$vacc_dose_interval != "4", ]
+
+# Train model
+model_train <- mgcv::gam(change_log ~ s_titer_orig_log + 
+                       n_titer_orig_log +
+                       age +
+                       gender +
+                       setting +
+                       vacc_dose_preinterval +
+                       vacc_dose_interval +
+                       dpv_cohort,
+                     data = train_set)
+
+# Predict on test set
+pred_test <- predict(model_train, newdata = test_set)
+
+# Calculate performance metrics
+mse_region <- mean((pred_test - test_set$change_log)^2)
+rmse_region <- sqrt(mse_region)
+R2_region <- 1 - (mse_region / var(test_set$change_log))
+cor_region <- cor(pred_test, test_set$change_log)
+
+print(paste("Region-Based Cross-Validation: MSE = ", mse_region, ", RMSE = ", rmse_region, ", R2 = ", R2_region, ", Correlation = ", cor_region))
+
+# ----------------------------
+# Method 2: Random split cross-validation
+# ----------------------------
+
+# Split data, training and testing
+set.seed(123) 
+trainIndex <- createDataPartition(dfx$change_log, p = .7, 
+                                  list = FALSE, 
+                                  times = 1)
+
+train_random <- dfx[ trainIndex,]
+test_random  <- dfx[-trainIndex,]
+
+# Random split
+model_random <- mgcv::gam(change_log ~ s_titer_orig_log + n_titer_orig_log + age + gender + setting + vacc_dose_preinterval + vacc_dose_interval +dpv_cohort,
+                          data = train_random)
+
+# Predict on the test set
+pred_random <- predict(model_random, newdata = test_random)
+
+# Calculate performance metrics
+mse_random <- mean((pred_random - test_random$change_log)^2)
+rmse_random <- sqrt(mse_random)
+R2_random <- 1 - (mse_random / var(test_random$change_log))
+cor_random <- cor(pred_random, test_random$change_log)
+
+print(paste("Random Split Cross-Validation: MSE = ", mse_random, ", RMSE = ", rmse_random, ", R2 = ", R2_random, ", Correlation = ", cor_random))
+
+# ----------------------------
+# Method 3: 10-fold CV
+# ----------------------------
+
+# 10-fold CV
+trControl <- trainControl(method = "cv", number = 10)
+
+model_kfold <- train(change_log ~ s_titer_orig_log + n_titer_orig_log + age + gender + setting + vacc_dose_preinterval + vacc_dose_interval + dpv_cohort,
+                     data = dfx, 
+                     trControl = trControl, 
+                     method = "gam")
+# Results
+print(model_kfold$results)
+
+# Predictions on the test set
+predictions_cv <- predict(model_kfold, newdata = dfx)
+
+# Pearson correlation
+cor_cv <- cor(dfx$change_log, predictions_cv)
+print(paste("10-fold Cross-validation Model: Correlation between observed and predicted = ", cor_cv))
+
+
+```
+
+## Fig 3E 
+```{r}
+# Models from above
+
+# df for each model
+df1 <- data.frame(Observed = test_set$change_log, Predicted = pred_test, Model = "Regional")
+df2 <- data.frame(Observed = test_random$change_log, Predicted = pred_random, Model = "Random Selection")
+df3 <- data.frame(Observed = dfx$change_log, Predicted = predictions_cv, Model = "10-fold CV")
+
+# Combine the data frames
+df <- rbind(df1, df2, df3)
+
+# Generate scatter plot
+cor_fig <- ggplot(df, aes(x = Observed, y = Predicted)) +
+  geom_point(aes(color = Model), alpha = 0.3, size = 0.6) +
+  geom_abline(intercept = 0, slope = 1, linetype = 2, color = "black") +
+  nature_medicine_theme() +
+  labs(title = NULL, x = "Observed S-titer change", y = "Predicted S-titer change", color = "Model") +
+  coord_cartesian(xlim = c(-2, 5), ylim = c(-2, 5)) + # Set consistent axis limits
+  theme(legend.position = c(.78, .22),
+        legend.text = element_text(size = 5),
+        legend.title = element_text(size = 6),
+        legend.background = element_blank(),  # Remove legend background
+        legend.key = element_blank(),  # Remove the box around each legend key
+        legend.box.background = element_blank())+  # Ensure no box around the entire legend
+    #    legend.box.margin = margin(0, 0, 0, 0)) +  # Adjust the margin if necessary
+  guides(color = guide_legend(title = "Model validation"))
+
+print(cor_fig)
+
+ggsave("CorrelationFigure.tiff", plot = cor_fig, width = 4, height = 4, dpi = 300, units = "in", compression = "lzw")
+
+
+```
+# Fig 5 
+## Fig 5A-C
+```{r}
+# Define functions --------------------------------------------------------
+
+# Simulate an initial distribution of titres
+set.seed(199)
+low_vals <- rnorm(100,mean=1,sd=2) |> pmax(0)
+high_vals <- rnorm(200,mean=2.5,sd=1) |> pmax(0)
+
+initial_distribution <- c(low_vals,high_vals)
+
+# Function defining pre-infection titres to post-infection set point titres
+
+pre_post_titres <- function(pre_titre,
+                            param1=2, # x offset
+                            param2=2, # y offset
+                            param3=0.3, # gradient
+                            param4=0 # linear term
+){
+  
+  post_titre <- param2 + exp(param3*(pre_titre-param1)) + param4*pre_titre
+  return(post_titre)
+}
+
+
+
+# Plot results for stable set points ------------------------------------------------------------
+
+par(mfrow=c(1,4), mgp=c(2.5,0.7,0), mar = c(3.5,3.5,4,1), oma = c(0, 0, 3, 0))
+
+pre_titre <- seq(0,6,0.1)
+
+# Plot distribution of initial titres
+hist(initial_distribution,breaks=seq(0,1.1*max(initial_distribution),0.5),xlab="log10 titre",ylab="frequency",
+     xaxs="i",yaxs="i",bty="l",lwd=2,col="light green",main="Initial titres",xlim=c(0,8))
+
+# Plot pre-to-post titre function
+plot(pre_titre,pre_post_titres(pre_titre),xlim=c(0,6),ylim=c(0,6),xaxs="i",yaxs="i",
+     bty="l",col="dark blue",type="l",lwd=2,xlab="pre-infection titre",ylab="post titre",
+     main="Pre-to-post function")
+lines(pre_titre,pre_titre,lty=2)
+
+# Plot titres after 1 additional wave of infection
+wave_1_post <- pre_post_titres(initial_distribution)
+
+hist(wave_1_post,breaks=seq(0,1.4*max(wave_1_post),0.5),xlab="log10 titre",ylab="frequency",
+     xaxs="i",yaxs="i",bty="l",lwd=2,col="light green",main="Titres after 1 wave",xlim=c(0,8))
+
+# Plot titres after 2 waves of infection
+wave_2_post <- pre_post_titres(wave_1_post)
+
+hist(wave_2_post,breaks=seq(0,1.4*max(wave_2_post),0.5),xlab="log10 titre",ylab="frequency",
+     xaxs="i",yaxs="i",bty="l",lwd=2,col="light green",main="Titres after 2 waves",xlim=c(0,8))
+
+mtext("C. Titer-dependent boosting + waning high titers. Simulated initial titers", side = 3, adj = 0, outer = TRUE, cex = 1.2, line = 1)
+
+dev.copy(png,paste0("titre_plot_1.png"),units="cm",width=30,height=8,res=150)
+dev.off()
+
+# Plot results for non converging set points ------------------------------------------------------------
+
+par(mfrow=c(1,4), mgp=c(2.5,0.7,0), mar = c(3.5,3.5,4,1), oma = c(0, 0, 3, 0))
+
+# Define alternative parameters
+param1=0 # x offset
+param2=1 # y offset
+param3=0.3 # gradient
+
+# Plot distribution of initial titres
+hist(initial_distribution,breaks=seq(0,1.1*max(initial_distribution),0.5),xlab="log10 titre",ylab="frequency",
+     xaxs="i",yaxs="i",bty="l",lwd=2,col="light gray",main="Initial titres",xlim=c(0,8))
+
+# Plot pre-to-post titre function
+plot(pre_titre,pre_post_titres(pre_titre,param1,param2,param3),xlim=c(0,6),ylim=c(0,6),xaxs="i",yaxs="i",
+     bty="l",col="dark blue",type="l",lwd=2,xlab="pre-infection titre",ylab="post titre",
+     main="Pre-to-post function")
+lines(pre_titre,pre_titre,lty=2)
+
+# Plot titres after 1 additional wave of infection
+wave_1_post <- pre_post_titres(initial_distribution,param1,param2,param3)
+
+hist(wave_1_post,breaks=seq(0,1.4*max(wave_1_post),0.5),xlab="log10 titre",ylab="frequency",
+     xaxs="i",yaxs="i",bty="l",lwd=2,col="light gray",main="Titres after 1 wave",xlim=c(0,8))
+
+# Plot titres after 2 waves of infection
+wave_2_post <- pre_post_titres(wave_1_post,param1,param2,param3)
+
+hist(wave_2_post,breaks=seq(0,1.4*max(wave_2_post),0.5),xlab="log10 titre",ylab="frequency",
+     xaxs="i",yaxs="i",bty="l",lwd=2,col="light gray",main="Titres after 2 waves",xlim=c(0,8))
+
+mtext("B. Titer-dependent boosting + no waning. Simulated initial titers", side = 3, adj = 0, outer = TRUE, cex = 1.2, line = 1)
+
+dev.copy(png,paste0("titre_plot_2.png"),units="cm",width=30,height=8,res=150)
+dev.off()
+
+# Plot results for non converging titre-independent set points ------------------------------------------------------------
+
+par(mfrow=c(1,4), mgp=c(2.5,0.7,0), mar = c(3.5,3.5,4,1), oma = c(0, 0, 3, 0))
+
+# Define alternative parameters
+param1=1 # x offset
+param2=1 # y offset
+param3=0 # gradient
+param4=1 # boost
+
+# Plot distribution of initial titres
+hist(initial_distribution,breaks=seq(0,1.1*max(initial_distribution),0.5),xlab="log10 titre",ylab="frequency",
+     xaxs="i",yaxs="i",bty="l",lwd=2,col="light blue",main="Initial titres",xlim=c(0,8))
+
+# Plot pre-to-post titre function
+plot(pre_titre,pre_post_titres(pre_titre,param1,param2,param3,param4),xlim=c(0,6),ylim=c(0,6),xaxs="i",yaxs="i",
+     bty="l",col="dark blue",type="l",lwd=2,xlab="pre-infection titre",ylab="post titre",
+     main="Pre-to-post function")
+lines(pre_titre,pre_titre,lty=2)
+
+# Plot titres after 1 additional wave of infection
+wave_1_post <- pre_post_titres(initial_distribution,param1,param2,param3,param4)
+
+hist(wave_1_post,breaks=seq(0,1.4*max(wave_1_post),0.5),xlab="log10 titre",ylab="frequency",
+     xaxs="i",yaxs="i",bty="l",lwd=2,col="light blue",main="Titres after 1 wave",xlim=c(0,8))
+
+# Plot titres after 2 waves of infection
+wave_2_post <- pre_post_titres(wave_1_post,param1,param2,param3,param4)
+
+hist(wave_2_post,breaks=seq(0,1.4*max(wave_2_post),0.5),xlab="log10 titre",ylab="frequency",
+     xaxs="i",yaxs="i",bty="l",lwd=2,col="light blue",main="Titres after 2 waves",xlim=c(0,8))
+
+mtext("A. Titer-independent boosting + no waning. Simulated initial titers", side = 3, adj = 0, outer = TRUE, cex = 1.2, line = 1)
+
+dev.copy(png,paste0("titre_plot_3.png"),units="cm",width=30,height=8,res=150)
+dev.off()
+
+```
+
+## Fig 5D-E
+```{r}
+# Define functions --------------------------------------------------------
+
+# Import data
+initial_distribution <- dfx$s_titer_orig_log |> pmax(0)
+
+# Function defining pre-infection titres to post-infection set point titres
+
+pre_post_titres <- function(pre_titre,
+                            param1=2, # x offset
+                            param2=2, # y offset
+                            param3=0.3, # gradient
+                            param4=0 # linear term
+){
+  
+  post_titre <- param2 + exp(param3*(pre_titre-param1)) + param4*pre_titre
+  return(post_titre)
+}
+
+# Plot results for stable set points ------------------------------------------------------------
+
+par(mfrow=c(1,4), mgp=c(2.5,0.7,0), mar = c(3.5,3.5,4,1), oma = c(0, 0, 3, 0))
+
+pre_titre <- seq(0,6,0.1)
+
+# Plot distribution of initial titres
+hist(initial_distribution,breaks=seq(0,1.1*max(initial_distribution),0.5),xlab="log10 titre",ylab="frequency",
+     xaxs="i",yaxs="i",bty="l",lwd=2,col="light green",main="Initial titres",xlim=c(0,8))
+
+# Plot pre-to-post titre function
+plot(pre_titre,pre_post_titres(pre_titre),xlim=c(0,6),ylim=c(0,6),xaxs="i",yaxs="i",
+     bty="l",col="dark blue",type="l",lwd=2,xlab="pre-infection titre",ylab="post titre",
+     main="Pre-to-post function")
+lines(pre_titre,pre_titre,lty=2)
+
+# Plot titres after 1 additional wave of infection
+wave_1_post <- pre_post_titres(initial_distribution)
+
+hist(wave_1_post,breaks=seq(0,1.4*max(wave_1_post),0.5),xlab="log10 titre",ylab="frequency",
+     xaxs="i",yaxs="i",bty="l",lwd=2,col="light green",main="Titres after 1 wave",xlim=c(0,8))
+
+# Plot titres after 2 waves of infection
+wave_2_post <- pre_post_titres(wave_1_post)
+
+hist(wave_2_post,breaks=seq(0,1.4*max(wave_2_post),0.5),xlab="log10 titre",ylab="frequency",
+     xaxs="i",yaxs="i",bty="l",lwd=2,col="light green",main="Titres after 2 waves",xlim=c(0,8))
+
+mtext("F. Titer-dependent boosting + waning high titers. Observed initial titers",  side = 3, adj = 0, outer = TRUE, cex = 1.2, line = 1)
+
+dev.copy(png,paste0("titre_plot_1_data.png"),units="cm",width=30,height=8,res=150)
+dev.off()
+
+# Plot results for non converging set points ------------------------------------------------------------
+
+par(mfrow=c(1,4), mgp=c(2.5,0.7,0), mar = c(3.5,3.5,4,1), oma = c(0, 0, 3, 0))
+
+# Define alternative parameters
+param1=0 # x offset
+param2=1 # y offset
+param3=0.3 # gradient
+
+# Plot distribution of initial titres
+hist(initial_distribution,breaks=seq(0,1.1*max(initial_distribution),0.5),xlab="log10 titre",ylab="frequency",
+     xaxs="i",yaxs="i",bty="l",lwd=2,col="light gray",main="Initial titres",xlim=c(0,8))
+
+# Plot pre-to-post titre function
+plot(pre_titre,pre_post_titres(pre_titre,param1,param2,param3),xlim=c(0,6),ylim=c(0,6),xaxs="i",yaxs="i",
+     bty="l",col="dark blue",type="l",lwd=2,xlab="pre-infection titre",ylab="post titre",
+     main="Pre-to-post function")
+lines(pre_titre,pre_titre,lty=2)
+
+# Plot titres after 1 additional wave of infection
+wave_1_post <- pre_post_titres(initial_distribution,param1,param2,param3)
+
+hist(wave_1_post,breaks=seq(0,1.4*max(wave_1_post),0.5),xlab="log10 titre",ylab="frequency",
+     xaxs="i",yaxs="i",bty="l",lwd=2,col="light gray",main="Titres after 1 wave",xlim=c(0,8))
+
+# Plot titres after 2 waves of infection
+wave_2_post <- pre_post_titres(wave_1_post,param1,param2,param3)
+
+hist(wave_2_post,breaks=seq(0,1.4*max(wave_2_post),0.5),xlab="log10 titre",ylab="frequency",
+     xaxs="i",yaxs="i",bty="l",lwd=2,col="light gray",main="Titres after 2 waves",xlim=c(0,8))
+
+mtext("E. Titer-dependent boosting + no waning. Observed initial titers",  side = 3, adj = 0, outer = TRUE, cex = 1.2, line = 1)
+
+dev.copy(png,paste0("titre_plot_2_data.png"),units="cm",width=30,height=8,res=150)
+dev.off()
+
+# Plot results for non converging titre-independent set points ------------------------------------------------------------
+
+par(mfrow=c(1,4), mgp=c(2.5,0.7,0), mar = c(3.5,3.5,4,1), oma = c(0, 0, 3, 0))
+
+# Define alternative parameters
+param1=1 # x offset
+param2=1 # y offset
+param3=0 # gradient
+param4=1 # boost
+
+# Plot distribution of initial titres
+hist(initial_distribution,breaks=seq(0,1.1*max(initial_distribution),0.5),xlab="log10 titre",ylab="frequency",
+     xaxs="i",yaxs="i",bty="l",lwd=2,col="light blue",main="Initial titres",xlim=c(0,8))
+
+# Plot pre-to-post titre function
+plot(pre_titre,pre_post_titres(pre_titre,param1,param2,param3,param4),xlim=c(0,6),ylim=c(0,6),xaxs="i",yaxs="i",
+     bty="l",col="dark blue",type="l",lwd=2,xlab="pre-infection titre",ylab="post titre",
+     main="Pre-to-post function")
+lines(pre_titre,pre_titre,lty=2)
+
+# Plot titres after 1 additional wave of infection
+wave_1_post <- pre_post_titres(initial_distribution,param1,param2,param3,param4)
+
+hist(wave_1_post,breaks=seq(0,1.4*max(wave_1_post),0.5),xlab="log10 titre",ylab="frequency",
+     xaxs="i",yaxs="i",bty="l",lwd=2,col="light blue",main="Titres after 1 wave",xlim=c(0,8))
+
+# Plot titres after 2 waves of infection
+wave_2_post <- pre_post_titres(wave_1_post,param1,param2,param3,param4)
+
+hist(wave_2_post,breaks=seq(0,1.4*max(wave_2_post),0.5),xlab="log10 titre",ylab="frequency",
+     xaxs="i",yaxs="i",bty="l",lwd=2,col="light blue",main="Titres after 2 waves",xlim=c(0,8))
+
+mtext("D. Titer-independent boosting + no waning - Observed initial titers", side = 3, adj = 0, outer = TRUE, cex = 1.2, line = 1)
+
+dev.copy(png,paste0("titre_plot_3_data.png"),units="cm",width=30,height=8,res=150)
+dev.off()
+
+```
+
+
