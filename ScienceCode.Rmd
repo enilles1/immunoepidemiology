@@ -17,13 +17,11 @@ library(ggforce)
 library(ggrepel)
 library(ggridges)
 library(ggpubr)
+library(readr)
 
 ```
 # Load data
 ```{r}
-# Loading the necessary library
-library(readr)
-
 # File path
 file_path <- "/Users/ericnilles/Dropbox (Personal)/Dropbox/Cohort Data/Science_df.csv"
 
@@ -375,9 +373,7 @@ ggsave("PCA.png", pca_biplot, width = 3, height = 3, units = "in")
 ### Cross validation
 ```{r}
 
-# ----------------------------
 # Method 1: Region-based cross-validation
-# ----------------------------
 
 # Training set (se)
 train_set <- dfx[dfx$region == 'se', ]
@@ -408,10 +404,7 @@ cor_region <- cor(pred_test, test_set$change_log)
 
 print(paste("Region-Based Cross-Validation: MSE = ", mse_region, ", RMSE = ", rmse_region, ", R2 = ", R2_region, ", Correlation = ", cor_region))
 
-# ----------------------------
 # Method 2: Random split cross-validation
-# ----------------------------
-
 # Split data, training and testing
 set.seed(123) 
 trainIndex <- createDataPartition(dfx$change_log, p = .7, 
@@ -436,10 +429,7 @@ cor_random <- cor(pred_random, test_random$change_log)
 
 print(paste("Random Split Cross-Validation: MSE = ", mse_random, ", RMSE = ", rmse_random, ", R2 = ", R2_random, ", Correlation = ", cor_random))
 
-# ----------------------------
 # Method 3: 10-fold CV
-# ----------------------------
-
 # 10-fold CV
 trControl <- trainControl(method = "cv", number = 10)
 
@@ -459,7 +449,6 @@ print(paste("10-fold Cross-validation Model: Correlation between observed and pr
 
 
 ```
-
 ## Fig 3E 
 ```{r}
 # Models from above
@@ -490,9 +479,6 @@ cor_fig <- ggplot(df, aes(x = Observed, y = Predicted)) +
 
 print(cor_fig)
 
-ggsave("CorrelationFigure.tiff", plot = cor_fig, width = 4, height = 4, dpi = 300, units = "in", compression = "lzw")
-
-
 ```
 # Fig 5 
 ## Fig 5A-C
@@ -518,8 +504,6 @@ pre_post_titres <- function(pre_titre,
   post_titre <- param2 + exp(param3*(pre_titre-param1)) + param4*pre_titre
   return(post_titre)
 }
-
-
 
 # Plot results for stable set points ------------------------------------------------------------
 
@@ -628,7 +612,6 @@ dev.copy(png,paste0("titre_plot_3.png"),units="cm",width=30,height=8,res=150)
 dev.off()
 
 ```
-
 ## Fig 5D-E
 ```{r}
 # Define functions --------------------------------------------------------
