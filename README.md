@@ -11,8 +11,6 @@ This repository contains the code and data to replicate or build on out analyses
     /script: Houses the R Markdown script for conducting the analysis.
         immunoepi.Code.Rmd: This script, developed in RStudio, contains the code for data analysis and visualization.
 
-**Running the Script**
-
 **To run the analysis:**
 
     Clone this repository to your local machine.
@@ -22,10 +20,7 @@ This repository contains the code and data to replicate or build on out analyses
 
 **Data Description**
 
-The cohort_df.csv file in the /data folder contains a limited, de-identified dataset, which has been stripped of personal identifiers to ensure the confidentiality of the participants. The dataset is structured to support the immunological analysis outlined in the immunoepi.Code.Rmd script.
-Contact
-
-For any questions, contributions, or issues related to this project, please contact Eric Nilles at enilles@bwh.harvard.edu.
+The cohort_df.csv file in the /data folder contains a full, de-identified dataset, without personal identifiers to ensure the confidentiality of the participants. The dataset is structured to support the immunological analysis outlined in the immunoepi.Code.Rmd script.
 
 **Citation**
 
