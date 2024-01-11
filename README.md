@@ -17,7 +17,7 @@ Clone this repository to your local machine.
 
 Open the **immunoepi.Code.Rmd** file in RStudio.
 
-Set your working directory in R to the **script** folder of the cloned repository.
+Set your working directory in R to the script folder of the cloned repository.
 
 Run script.
 
