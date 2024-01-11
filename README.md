@@ -19,7 +19,7 @@ Open the immunoepi.Code.Rmd file in RStudio.
 
 Set your working directory in R to the script folder of the cloned repository.
 
-Run the script. It will automatically load data from the data/cohort_df.csv file.
+Run script.
 
 **Citation**
 
