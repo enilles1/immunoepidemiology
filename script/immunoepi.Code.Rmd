@@ -72,7 +72,7 @@ print(overall_ridge_plot)
 
 ```
 # Fig 2
-```{r}
+```{r fig.height=5, fig.width=9}
 dfx <- dfx %>%
   mutate(group = cut(s_titer_orig_log,
                      breaks = c(-Inf, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, Inf),
@@ -139,7 +139,7 @@ print(plot_overall)
 # Fig 3
 
 ## Fig 3A
-```{r}
+```{r fig.height=3, fig.width=3}
 
 # Create a ggpaired plot for the overall data
 create_ggpaired_plot <- function(data, title, y_name = NULL, show_y_ticks = TRUE) {
@@ -179,7 +179,7 @@ print(fig2a)
 
 ```
 ## Fig 3B
-```{r}
+```{r fig.height=3, fig.width=3}
 # Filter out values <0, calculate % change
 dfx_filtered <- dfx %>%
   filter(s_titer_orig_log >0)%>%
@@ -215,7 +215,7 @@ dfx_filtered <- dfx %>%
 
 ```
 ## Fig 3C
-```{r}
+```{r fig.height=3, fig.width=3}
 
 create_gam_model <- function(data) {
   model <- mgcv::gam(change_log ~ ns(s_titer_orig_log, df=2) +
@@ -298,11 +298,9 @@ dfx$vacc_dose_interval_factor <- as.factor(dfx$vacc_dose_interval)
 pca_result$sdev^2/sum(pca_result$sdev^2)
 pca_result$rotation
 
-
-
 ```
 ## Fig 3D
-```{r}
+```{r fig.height=3, fig.width=3}
 
 # Extract PCA scores for obs
 pca_scores <- as.data.frame(pca_result$x)
@@ -372,7 +370,6 @@ pca_biplot <- pca_biplot +
 
 print(pca_biplot)
 
-ggsave("PCA.png", pca_biplot, width = 3, height = 3, units = "in")
 
 ```
 ## Cross validation
@@ -462,7 +459,7 @@ print(paste("10-fold Cross-validation Model: Correlation between observed and pr
 
 ```
 ## Fig 3E 
-```{r}
+```{r fig.height=3, fig.width=3}
 # Models from above
 
 # df for each model
@@ -496,7 +493,7 @@ ggsave("CorrelationFigure.tiff", plot = cor_fig, width = 4, height = 4, dpi = 30
 
 ```
 # Fig 5 
-```{r}
+```{r fig.height=3, fig.width=9}
 # For reproducibility
 set.seed(199)
 
