@@ -23,7 +23,7 @@ library(readr)
 # Load data
 ```{r}
 # File path
-file_path <- "/Users/ericnilles/Dropbox (Personal)/Dropbox/Cohort Data/Science_df.csv"
+file_path <- "https://raw.githubusercontent.com/enilles1/immunoepidemiology/main/Science_df.csv?token=GHSAT0AAAAAACMV66JXJXWZCANNR6SHL6GIZM7F3VA"
 
 # Reading the CSV file into the dataframe dfx
 dfx <- read_csv(file_path)
