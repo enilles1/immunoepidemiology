@@ -1,9 +1,32 @@
 Data and code for SARS-COV-2 immune dynamics
 
-**Quick start guide**
+**Overview**
 
-First, set local path in R to GitHub directory, e.g.: setwd("~/Documents/GitHub/immunoepidemiology/"). The script to reproduce the analyses and plots are in Science.Code.Rmd
+This repository contains the code and data to replicate or build on out analyses.
+
+**Repository Structure**
+
+    /data: Contains the de-identified, limited dataset used for analyses.
+        cohort_df.csv: This file includes de-identified data without personal identifiers, ensuring participant privacy and data security.
+    /script: Houses the R Markdown script for conducting the analysis.
+        immunoepi.Code.Rmd: This script, developed in RStudio, contains the code for data analysis and visualization.
+
+**Running the Script**
+
+**To run the analysis:**
+
+    Clone this repository to your local machine.
+    Open the immunoepi.Code.Rmd file in RStudio.
+    Set your working directory in R to the script folder of the cloned repository.
+    Run the script. It will automatically load data from the data/cohort_df.csv file.
+
+**Data Description**
+
+The cohort_df.csv file in the /data folder contains a limited, de-identified dataset, which has been stripped of personal identifiers to ensure the confidentiality of the participants. The dataset is structured to support the immunological analysis outlined in the immunoepi.Code.Rmd script.
+Contact
+
+For any questions, contributions, or issues related to this project, please contact Eric Nilles at enilles@bwh.harvard.edu.
 
 **Citation**
 
-Nilles et al. Non-linear kinetics of individual-level immune responses drive predictable population-level SARS-CoV-2 serological set points.  Science Advances, 2024
+Nilles et al. Non-linear kinetics of individual-level immune responses drive predictable population-level SARS-CoV-2 serological set points.
