@@ -1,4 +1,4 @@
-Code for analysis of SARS-COV-2 immune dynamics
+Data and code for SARS-COV-2 immune dynamics
 
 **Quick start guide**
 
