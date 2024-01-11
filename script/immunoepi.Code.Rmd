@@ -1,6 +1,5 @@
-
+# Load packages
 ```{r}
-library(readr)
 library(mgcv)
 library(splines)
 library(ggplot2)
@@ -21,7 +20,6 @@ library(readr)
 ```
 # Fig 1
 ```
-
 theme_set(theme_pubr())
 
 # Select and reshape
