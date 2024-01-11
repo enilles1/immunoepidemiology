@@ -5,22 +5,17 @@ Data and code for SARS-COV-2 immune dynamics
 This repository contains the code and data to replicate or build on out analyses.
 
 **Repository Structure**
- /data: Contains the de-identified, limited dataset used for analyses.
+/data: Contains the de-identified, limited dataset used for analyses.
         cohort_df.csv: This file includes de-identified data without personal identifiers, ensuring participant privacy and data security.
-    /script: Houses the R Markdown script for conducting the analysis.
-        immunoepi.Code.Rmd: This script, developed in RStudio, contains the code for data analysis and visualization.
-
-    /data: Contains the de-identified, limited dataset used for analyses.
-        cohort_df.csv: This file includes de-identified data without personal identifiers, ensuring participant privacy and data security.
-    /script: Houses the R Markdown script for conducting the analysis.
+/script: Houses the R Markdown script for conducting the analysis.
         immunoepi.Code.Rmd: This script, developed in RStudio, contains the code for data analysis and visualization.
 
 **To run the analysis:**
 
-    Clone this repository to your local machine.
-    Open the immunoepi.Code.Rmd file in RStudio.
-    Set your working directory in R to the script folder of the cloned repository.
-    Run the script. It will automatically load data from the data/cohort_df.csv file.
+Clone this repository to your local machine.
+Open the immunoepi.Code.Rmd file in RStudio.
+Set your working directory in R to the script folder of the cloned repository.
+Run the script. It will automatically load data from the data/cohort_df.csv file.
 
 **Data Description**
 
