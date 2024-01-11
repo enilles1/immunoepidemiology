@@ -1,7 +1,7 @@
 
 **Overview**
 
-This repository contains the code and data to replicate or build on our analyses. The code replicates the main figures. To generate figures stratified by specific variables, such as the number of interval vaccine doses received, create subsets of the df using the filter() or list() functions.
+This repository contains the code and data to replicate or build on our analyses. 
 
 **Repository Structure**
 
@@ -20,6 +20,10 @@ Open the **immunoepi.Code.Rmd** file in RStudio.
 Set your working directory in R to the script folder of the cloned repository.
 
 Run script.
+
+**To run additional analyses**
+
+The code replicates the main figures. To generate additional figures, for example to stratify the figures based on the number of interval vaccine doses received, create subsets of the df using the filter() or list() functions and re-run the script on the subsetted df.
 
 **Citation**
 
