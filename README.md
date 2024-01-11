@@ -2,7 +2,7 @@ Data and code for SARS-COV-2 immune dynamics
 
 **Overview**
 
-This repository contains the code and data to replicate or build on out analyses.
+This repository contains the code and data to replicate or build on our analyses.
 
 **Repository Structure**
 
@@ -24,7 +24,7 @@ Run the script. It will automatically load data from the data/cohort_df.csv file
 
 **Data Description**
 
-The cohort_df.csv file in the /data folder contains a full, de-identified dataset, without personal identifiers to ensure the confidentiality of the participants. The dataset is structured to support the immunological analysis outlined in the immunoepi.Code.Rmd script.
+The cohort_df.csv file in the /data folder contains a full, de-identified dataset, without personal identifiers to ensure the confidentiality. 
 
 **Citation**
 
