@@ -481,143 +481,21 @@ print(cor_fig)
 
 ```
 # Fig 5 
-## Fig 5A-C
 ```{r}
+# For reproducibility
+set.seed(199)
+
 # Define functions --------------------------------------------------------
 
-# Simulate an initial distribution of titres
-set.seed(199)
+# Simulate a plausible initial distribution of titres
 low_vals <- rnorm(100,mean=1,sd=2) |> pmax(0)
 high_vals <- rnorm(200,mean=2.5,sd=1) |> pmax(0)
-
 initial_distribution <- c(low_vals,high_vals)
 
-# Function defining pre-infection titres to post-infection set point titres
+# Simulate a high initial distribution of titres
+high_vals2 <- rnorm(100,mean=4,sd=0.5) |> pmax(0)
+initial_distribution2 <- c(high_vals2)
 
-pre_post_titres <- function(pre_titre,
-                            param1=2, # x offset
-                            param2=2, # y offset
-                            param3=0.3, # gradient
-                            param4=0 # linear term
-){
-  
-  post_titre <- param2 + exp(param3*(pre_titre-param1)) + param4*pre_titre
-  return(post_titre)
-}
-
-# Plot results for stable set points ------------------------------------------------------------
-
-par(mfrow=c(1,4), mgp=c(2.5,0.7,0), mar = c(3.5,3.5,4,1), oma = c(0, 0, 3, 0))
-
-pre_titre <- seq(0,6,0.1)
-
-# Plot distribution of initial titres
-hist(initial_distribution,breaks=seq(0,1.1*max(initial_distribution),0.5),xlab="log10 titre",ylab="frequency",
-     xaxs="i",yaxs="i",bty="l",lwd=2,col="light green",main="Initial titres",xlim=c(0,8))
-
-# Plot pre-to-post titre function
-plot(pre_titre,pre_post_titres(pre_titre),xlim=c(0,6),ylim=c(0,6),xaxs="i",yaxs="i",
-     bty="l",col="dark blue",type="l",lwd=2,xlab="pre-infection titre",ylab="post titre",
-     main="Pre-to-post function")
-lines(pre_titre,pre_titre,lty=2)
-
-# Plot titres after 1 additional wave of infection
-wave_1_post <- pre_post_titres(initial_distribution)
-
-hist(wave_1_post,breaks=seq(0,1.4*max(wave_1_post),0.5),xlab="log10 titre",ylab="frequency",
-     xaxs="i",yaxs="i",bty="l",lwd=2,col="light green",main="Titres after 1 wave",xlim=c(0,8))
-
-# Plot titres after 2 waves of infection
-wave_2_post <- pre_post_titres(wave_1_post)
-
-hist(wave_2_post,breaks=seq(0,1.4*max(wave_2_post),0.5),xlab="log10 titre",ylab="frequency",
-     xaxs="i",yaxs="i",bty="l",lwd=2,col="light green",main="Titres after 2 waves",xlim=c(0,8))
-
-mtext("C. Titer-dependent boosting + waning high titers. Simulated initial titers", side = 3, adj = 0, outer = TRUE, cex = 1.2, line = 1)
-
-dev.copy(png,paste0("titre_plot_1.png"),units="cm",width=30,height=8,res=150)
-dev.off()
-
-# Plot results for non converging set points ------------------------------------------------------------
-
-par(mfrow=c(1,4), mgp=c(2.5,0.7,0), mar = c(3.5,3.5,4,1), oma = c(0, 0, 3, 0))
-
-# Define alternative parameters
-param1=0 # x offset
-param2=1 # y offset
-param3=0.3 # gradient
-
-# Plot distribution of initial titres
-hist(initial_distribution,breaks=seq(0,1.1*max(initial_distribution),0.5),xlab="log10 titre",ylab="frequency",
-     xaxs="i",yaxs="i",bty="l",lwd=2,col="light gray",main="Initial titres",xlim=c(0,8))
-
-# Plot pre-to-post titre function
-plot(pre_titre,pre_post_titres(pre_titre,param1,param2,param3),xlim=c(0,6),ylim=c(0,6),xaxs="i",yaxs="i",
-     bty="l",col="dark blue",type="l",lwd=2,xlab="pre-infection titre",ylab="post titre",
-     main="Pre-to-post function")
-lines(pre_titre,pre_titre,lty=2)
-
-# Plot titres after 1 additional wave of infection
-wave_1_post <- pre_post_titres(initial_distribution,param1,param2,param3)
-
-hist(wave_1_post,breaks=seq(0,1.4*max(wave_1_post),0.5),xlab="log10 titre",ylab="frequency",
-     xaxs="i",yaxs="i",bty="l",lwd=2,col="light gray",main="Titres after 1 wave",xlim=c(0,8))
-
-# Plot titres after 2 waves of infection
-wave_2_post <- pre_post_titres(wave_1_post,param1,param2,param3)
-
-hist(wave_2_post,breaks=seq(0,1.4*max(wave_2_post),0.5),xlab="log10 titre",ylab="frequency",
-     xaxs="i",yaxs="i",bty="l",lwd=2,col="light gray",main="Titres after 2 waves",xlim=c(0,8))
-
-mtext("B. Titer-dependent boosting + no waning. Simulated initial titers", side = 3, adj = 0, outer = TRUE, cex = 1.2, line = 1)
-
-dev.copy(png,paste0("titre_plot_2.png"),units="cm",width=30,height=8,res=150)
-dev.off()
-
-# Plot results for non converging titre-independent set points ------------------------------------------------------------
-
-par(mfrow=c(1,4), mgp=c(2.5,0.7,0), mar = c(3.5,3.5,4,1), oma = c(0, 0, 3, 0))
-
-# Define alternative parameters
-param1=1 # x offset
-param2=1 # y offset
-param3=0 # gradient
-param4=1 # boost
-
-# Plot distribution of initial titres
-hist(initial_distribution,breaks=seq(0,1.1*max(initial_distribution),0.5),xlab="log10 titre",ylab="frequency",
-     xaxs="i",yaxs="i",bty="l",lwd=2,col="light blue",main="Initial titres",xlim=c(0,8))
-
-# Plot pre-to-post titre function
-plot(pre_titre,pre_post_titres(pre_titre,param1,param2,param3,param4),xlim=c(0,6),ylim=c(0,6),xaxs="i",yaxs="i",
-     bty="l",col="dark blue",type="l",lwd=2,xlab="pre-infection titre",ylab="post titre",
-     main="Pre-to-post function")
-lines(pre_titre,pre_titre,lty=2)
-
-# Plot titres after 1 additional wave of infection
-wave_1_post <- pre_post_titres(initial_distribution,param1,param2,param3,param4)
-
-hist(wave_1_post,breaks=seq(0,1.4*max(wave_1_post),0.5),xlab="log10 titre",ylab="frequency",
-     xaxs="i",yaxs="i",bty="l",lwd=2,col="light blue",main="Titres after 1 wave",xlim=c(0,8))
-
-# Plot titres after 2 waves of infection
-wave_2_post <- pre_post_titres(wave_1_post,param1,param2,param3,param4)
-
-hist(wave_2_post,breaks=seq(0,1.4*max(wave_2_post),0.5),xlab="log10 titre",ylab="frequency",
-     xaxs="i",yaxs="i",bty="l",lwd=2,col="light blue",main="Titres after 2 waves",xlim=c(0,8))
-
-mtext("A. Titer-independent boosting + no waning. Simulated initial titers", side = 3, adj = 0, outer = TRUE, cex = 1.2, line = 1)
-
-dev.copy(png,paste0("titre_plot_3.png"),units="cm",width=30,height=8,res=150)
-dev.off()
-
-```
-## Fig 5D-E
-```{r}
-# Define functions --------------------------------------------------------
-
-# Import data
-initial_distribution <- dfx$s_titer_orig_log |> pmax(0)
 
 # Function defining pre-infection titres to post-infection set point titres
 
@@ -632,6 +510,8 @@ pre_post_titres <- function(pre_titre,
   return(post_titre)
 }
 
+
+
 # Plot results for stable set points ------------------------------------------------------------
 
 par(mfrow=c(1,4), mgp=c(2.5,0.7,0), mar = c(3.5,3.5,4,1), oma = c(0, 0, 3, 0))
@@ -640,10 +520,12 @@ pre_titre <- seq(0,6,0.1)
 
 # Plot distribution of initial titres
 hist(initial_distribution,breaks=seq(0,1.1*max(initial_distribution),0.5),xlab="log10 titre",ylab="frequency",
-     xaxs="i",yaxs="i",bty="l",lwd=2,col="light green",main="Initial titres",xlim=c(0,8))
+     xaxs="i",yaxs="i",bty="l",lwd=2,col="light blue",main="Initial titres",xlim=c(0,7))
+
+hist(initial_distribution2,breaks=seq(0,1.1*max(initial_distribution2),0.5),col=rgb(0,0,1,0.5),xlim=c(0,7),add=T)
 
 # Plot pre-to-post titre function
-plot(pre_titre,pre_post_titres(pre_titre),xlim=c(0,6),ylim=c(0,6),xaxs="i",yaxs="i",
+plot(pre_titre,pre_post_titres(pre_titre),xlim=c(0,8),ylim=c(0,6),xaxs="i",yaxs="i",
      bty="l",col="dark blue",type="l",lwd=2,xlab="pre-infection titre",ylab="post titre",
      main="Pre-to-post function")
 lines(pre_titre,pre_titre,lty=2)
@@ -652,20 +534,31 @@ lines(pre_titre,pre_titre,lty=2)
 wave_1_post <- pre_post_titres(initial_distribution)
 
 hist(wave_1_post,breaks=seq(0,1.4*max(wave_1_post),0.5),xlab="log10 titre",ylab="frequency",
-     xaxs="i",yaxs="i",bty="l",lwd=2,col="light green",main="Titres after 1 wave",xlim=c(0,8))
+     xaxs="i",yaxs="i",bty="l",lwd=2,col="light blue",main="Titres after 1 wave",xlim=c(0,8))
+
+# Plot titres after 1 additional wave of infection for high initial
+wave_1_post2 <- pre_post_titres(initial_distribution2)
+
+hist(wave_1_post2,breaks=seq(0,1.4*max(wave_1_post2),0.5),col=rgb(0,0,1,0.5),main="Titres after 1 wave",xlim=c(0,8),add=T)
 
 # Plot titres after 2 waves of infection
 wave_2_post <- pre_post_titres(wave_1_post)
 
 hist(wave_2_post,breaks=seq(0,1.4*max(wave_2_post),0.5),xlab="log10 titre",ylab="frequency",
-     xaxs="i",yaxs="i",bty="l",lwd=2,col="light green",main="Titres after 2 waves",xlim=c(0,8))
+     xaxs="i",yaxs="i",bty="l",lwd=2,col="light blue",main="Titres after 2 waves",xlim=c(0,8))
 
-mtext("F. Titer-dependent boosting + waning high titers. Observed initial titers",  side = 3, adj = 0, outer = TRUE, cex = 1.2, line = 1)
+# Plot titres after 2 waves of infection for high initial
+wave_2_post2 <- pre_post_titres(wave_1_post2)
 
-dev.copy(png,paste0("titre_plot_1_data.png"),units="cm",width=30,height=8,res=150)
+hist(wave_2_post2,breaks=seq(0,1.4*max(wave_2_post2),0.5),col=rgb(0,0,1,0.5),main="Titres after 2 waves",xlim=c(0,8),add=T)
+
+mtext("C. Titer-dependent boosting with waning", side = 3, adj = 0, outer = TRUE, cex = 1.2, line = 1)
+
+dev.copy(png,paste0("titre_plot_1.png"),units="cm",width=25,height=10,res=150)
 dev.off()
 
-# Plot results for non converging set points ------------------------------------------------------------
+
+# Plot results for non converging titre-dependent set points ------------------------------------------------------------
 
 par(mfrow=c(1,4), mgp=c(2.5,0.7,0), mar = c(3.5,3.5,4,1), oma = c(0, 0, 3, 0))
 
@@ -676,10 +569,12 @@ param3=0.3 # gradient
 
 # Plot distribution of initial titres
 hist(initial_distribution,breaks=seq(0,1.1*max(initial_distribution),0.5),xlab="log10 titre",ylab="frequency",
-     xaxs="i",yaxs="i",bty="l",lwd=2,col="light gray",main="Initial titres",xlim=c(0,8))
+     xaxs="i",yaxs="i",bty="l",lwd=2,col="light blue",main="Initial titres",xlim=c(0,7))
+
+hist(initial_distribution2,breaks=seq(0,1.1*max(initial_distribution2),0.5),col=rgb(0,0,1,0.5),xlim=c(0,7),add=T)
 
 # Plot pre-to-post titre function
-plot(pre_titre,pre_post_titres(pre_titre,param1,param2,param3),xlim=c(0,6),ylim=c(0,6),xaxs="i",yaxs="i",
+plot(pre_titre,pre_post_titres(pre_titre,param1,param2,param3),xlim=c(0,8),ylim=c(0,6),xaxs="i",yaxs="i",
      bty="l",col="dark blue",type="l",lwd=2,xlab="pre-infection titre",ylab="post titre",
      main="Pre-to-post function")
 lines(pre_titre,pre_titre,lty=2)
@@ -688,17 +583,27 @@ lines(pre_titre,pre_titre,lty=2)
 wave_1_post <- pre_post_titres(initial_distribution,param1,param2,param3)
 
 hist(wave_1_post,breaks=seq(0,1.4*max(wave_1_post),0.5),xlab="log10 titre",ylab="frequency",
-     xaxs="i",yaxs="i",bty="l",lwd=2,col="light gray",main="Titres after 1 wave",xlim=c(0,8))
+     xaxs="i",yaxs="i",bty="l",lwd=2,col="light blue",main="Titres after 1 wave",xlim=c(0,8))
+
+# Plot titres after 1 additional wave of infection for high initial
+wave_1_post2 <- pre_post_titres(initial_distribution2,param1,param2,param3)
+
+hist(wave_1_post2,breaks=seq(0,1.4*max(wave_1_post2),0.5),col=rgb(0,0,1,0.5),main="Titres after 1 wave",xlim=c(0,8),add=T)
 
 # Plot titres after 2 waves of infection
 wave_2_post <- pre_post_titres(wave_1_post,param1,param2,param3)
 
 hist(wave_2_post,breaks=seq(0,1.4*max(wave_2_post),0.5),xlab="log10 titre",ylab="frequency",
-     xaxs="i",yaxs="i",bty="l",lwd=2,col="light gray",main="Titres after 2 waves",xlim=c(0,8))
+     xaxs="i",yaxs="i",bty="l",lwd=2,col="light blue",main="Titres after 2 waves",xlim=c(0,8))
 
-mtext("E. Titer-dependent boosting + no waning. Observed initial titers",  side = 3, adj = 0, outer = TRUE, cex = 1.2, line = 1)
+# Plot titres after 2 waves of infection for high initial
+wave_2_post2 <- pre_post_titres(wave_1_post2,param1,param2,param3)
 
-dev.copy(png,paste0("titre_plot_2_data.png"),units="cm",width=30,height=8,res=150)
+hist(wave_2_post2,breaks=seq(0,1.4*max(wave_2_post2),0.5),col=rgb(0,0,1,0.5),main="Titres after 2 waves",xlim=c(0,8),add=T)
+
+mtext("B. Titer-dependent boosting without waning", side = 3, adj = 0, outer = TRUE, cex = 1.2, line = 1)
+
+dev.copy(png,paste0("titre_plot_2.png"),units="cm",width=25,height=10,res=150)
 dev.off()
 
 # Plot results for non converging titre-independent set points ------------------------------------------------------------
@@ -707,16 +612,18 @@ par(mfrow=c(1,4), mgp=c(2.5,0.7,0), mar = c(3.5,3.5,4,1), oma = c(0, 0, 3, 0))
 
 # Define alternative parameters
 param1=1 # x offset
-param2=1 # y offset
+param2=0 # y offset
 param3=0 # gradient
 param4=1 # boost
 
 # Plot distribution of initial titres
 hist(initial_distribution,breaks=seq(0,1.1*max(initial_distribution),0.5),xlab="log10 titre",ylab="frequency",
-     xaxs="i",yaxs="i",bty="l",lwd=2,col="light blue",main="Initial titres",xlim=c(0,8))
+     xaxs="i",yaxs="i",bty="l",lwd=2,col="light blue",main="Initial titres",xlim=c(0,7))
+
+hist(initial_distribution2,breaks=seq(0,1.1*max(initial_distribution2),0.5),col=rgb(0,0,1,0.5),xlim=c(0,7),add=T)
 
 # Plot pre-to-post titre function
-plot(pre_titre,pre_post_titres(pre_titre,param1,param2,param3,param4),xlim=c(0,6),ylim=c(0,6),xaxs="i",yaxs="i",
+plot(pre_titre,pre_post_titres(pre_titre,param1,param2,param3,param4),xlim=c(0,8),ylim=c(0,6),xaxs="i",yaxs="i",
      bty="l",col="dark blue",type="l",lwd=2,xlab="pre-infection titre",ylab="post titre",
      main="Pre-to-post function")
 lines(pre_titre,pre_titre,lty=2)
@@ -727,15 +634,25 @@ wave_1_post <- pre_post_titres(initial_distribution,param1,param2,param3,param4)
 hist(wave_1_post,breaks=seq(0,1.4*max(wave_1_post),0.5),xlab="log10 titre",ylab="frequency",
      xaxs="i",yaxs="i",bty="l",lwd=2,col="light blue",main="Titres after 1 wave",xlim=c(0,8))
 
+# Plot titres after 1 additional wave of infection for high initial
+wave_1_post2 <- pre_post_titres(initial_distribution2,param1,param2,param3,param4)
+
+hist(wave_1_post2,breaks=seq(0,1.4*max(wave_1_post2),0.5),col=rgb(0,0,1,0.5),main="Titres after 1 wave",xlim=c(0,8),add=T)
+
 # Plot titres after 2 waves of infection
 wave_2_post <- pre_post_titres(wave_1_post,param1,param2,param3,param4)
 
 hist(wave_2_post,breaks=seq(0,1.4*max(wave_2_post),0.5),xlab="log10 titre",ylab="frequency",
      xaxs="i",yaxs="i",bty="l",lwd=2,col="light blue",main="Titres after 2 waves",xlim=c(0,8))
 
-mtext("D. Titer-independent boosting + no waning - Observed initial titers", side = 3, adj = 0, outer = TRUE, cex = 1.2, line = 1)
+# Plot titres after 2 waves of infection for high initial
+wave_2_post2 <- pre_post_titres(wave_1_post2,param1,param2,param3,param4)
 
-dev.copy(png,paste0("titre_plot_3_data.png"),units="cm",width=30,height=8,res=150)
+hist(wave_2_post2,breaks=seq(0,1.4*max(wave_2_post2),0.5),col=rgb(0,0,1,0.5),main="Titres after 2 waves",xlim=c(0,8),add=T)
+
+mtext("A. Titer-independent boosting without waning", side = 3, adj = 0, outer = TRUE, cex = 1.2, line = 1)
+
+dev.copy(png,paste0("titre_plot_3.png"),units="cm",width=25,height=10,res=150)
 dev.off()
 
 ```
