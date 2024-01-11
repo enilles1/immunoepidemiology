@@ -23,7 +23,7 @@ Run script.
 
 **To run additional analyses**
 
-The code replicates the main figures. To generate additional figures, for example to stratify the figures based on the number of interval vaccine doses received, create subsets of the df using the filter() or list() functions and re-run the script on the subsetted df.
+The code replicates the main figures. To generate additional figures based on different subsets of data (like the number of interval vaccine doses received), modify the **dfx** dataframe using **filter()** or other data manipulation functions. Then, rerun the relevant parts of the script.
 
 **Citation**
 
