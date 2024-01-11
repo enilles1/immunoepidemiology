@@ -221,8 +221,9 @@ create_gam_model <- function(data) {
                        n_titer_orig_log +
                        age +
                        gender +
-                      setting +
+                       setting +
                        vacc_dose_preinterval +
+                       vacc_dose_interval +
                        dpv_cohort +
                        interval,
                      data = data)
