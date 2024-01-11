@@ -21,10 +21,6 @@ Set your working directory in R to the script folder of the cloned repository.
 
 Run the script. It will automatically load data from the data/cohort_df.csv file.
 
-**Data Description**
-
-The cohort_df.csv file in the /data folder contains a full, de-identified dataset, without personal identifiers to ensure the confidentiality. 
-
 **Citation**
 
 Nilles et al. Non-linear kinetics of individual-level immune responses drive predictable population-level SARS-CoV-2 serological set points.
