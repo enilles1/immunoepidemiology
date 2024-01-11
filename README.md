@@ -1,4 +1,3 @@
-Data and code for SARS-COV-2 immune dynamics
 
 **Overview**
 
