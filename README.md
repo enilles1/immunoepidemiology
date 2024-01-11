@@ -5,7 +5,7 @@ This repository contains the code and data to replicate or build on our analyses
 
 **Repository Structure**
 
-/data: Contains the de-identified, limited dataset used for analyses.
+/data: Contains the de-identified dataset of all study participants used for analyses.
         cohort_df.csv: This file includes de-identified data without personal identifiers.
 
 /script: Contains the R Markdown script for conducting the analysis and key figures.
