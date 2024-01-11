@@ -17,8 +17,10 @@ library(ggpubr)
 library(splines)
 
 ```
-# Load data
+# Set wd and load data
 ```
+setwd("~/immunoepidemiology/script")
+
 # Assuming the script is run with working directory set to the script folder
 # Adjust the path if your setup is different
 data_path <- "../data/cohort_df.csv"
