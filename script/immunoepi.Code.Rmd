@@ -20,7 +20,6 @@ library(splines)
 # Load data
 ```
 # Assuming the script is run with working directory set to the script folder
-# Adjust the path if your setup is different
 data_path <- "../data/cohort_df.csv"
 dfx <- read.csv(data_path, stringsAsFactors = FALSE)
 ```
