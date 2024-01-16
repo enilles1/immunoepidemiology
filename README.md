@@ -6,7 +6,7 @@ This repository contains the code and data to replicate or build on our analyses
 **Repository Structure**
 
 **/data**: Contains the de-identified dataset of all study participants used for analyses.
-        **cohort_df.csv**: This file includes de-identified data without personal identifiers.
+        **cohort_df.csv**: This file includes de-identified data without personal identifiers. Dates of sample collection have been adjusted to Monday of the corresponding week. 
 
 **/script**: Contains the R Markdown script for conducting the analysis and key figures.
         **immunoepi.Code.Rmd**: This script, developed in RStudio, contains the code for data analysis and visualization.
