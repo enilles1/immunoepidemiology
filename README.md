@@ -27,4 +27,4 @@ The code replicates the main figures. To generate additional figures based on di
 
 **Citation**
 
-Nilles et al. Non-linear kinetics of individual-level immune responses drive predictable population-level SARS-CoV-2 serological set points.
+Nilles et al. Convergence of Population SARS-CoV-2 Spike Antibody Levels to ‘immune setpoint’
