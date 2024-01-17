@@ -18,9 +18,9 @@ library(splines)
 
 ```
 # Load data
-```
+``` {r}
 # Assuming the script is run with working directory set to the script folder
-data_path <- "../data/cohort_df.csv"
+data_path <- "../data/Science_df.csv"
 dfx <- read.csv(data_path, stringsAsFactors = FALSE)
 ```
 # Fig 1
@@ -39,7 +39,7 @@ xx7 <- expression(10^6)
 
 # Select and reshape
 long_data <- dfx %>%
-  select(cohort_ID, age, gender, s_titer_orig_log, s_titer_log) %>%
+  dplyr::select(cohort_ID, age, gender, s_titer_orig_log, s_titer_log) %>%
   pivot_longer(cols = starts_with("s_titer"), names_to = "ind", values_to = "values") %>%
   filter(!is.na(values) & values != '-Inf')
 
@@ -105,7 +105,7 @@ medians <- dfx %>%
 # df for median connecting lines
 median_lines <- medians %>%
   mutate(group_numeric = as.numeric(group)) %>%
-  select(group_numeric, median_orig, median_log)
+  dplyr::select(group_numeric, median_orig, median_log)
 
 # Overall plot
 plot <- ggplot(long_dfx, aes(x = as.numeric(group), y = value)) +
@@ -148,7 +148,7 @@ create_ggpaired_plot <- function(data, title, y_name = NULL, show_y_ticks = TRUE
   
   # Reshape
   data_melt <- data %>%
-    select(cohort_ID, s_titer_log, s_titer_orig_log, change_direction) %>%
+    dplyr::select(cohort_ID, s_titer_log, s_titer_orig_log, change_direction) %>%
     gather(key = "condition", value = "value", -cohort_ID, -change_direction)
   
   # Create the plot
@@ -255,7 +255,7 @@ create_plot <- function(model, title_text, model_data) {
                         labels = c(xx0, xx1, xx2, xx3, xx4, xx5, xx6))+ 
       scale_y_continuous(
                         breaks = c(-2, 0, 2, 4),
-                        labels = c(xx,xx1, xx3, xx5))+  
+                        labels = c(xx0,xx1, xx3, xx5))+  
     coord_cartesian(ylim = c(-2.2, 5), xlim = c(-0.5, 5.2))
   
   return(plot_obj)
@@ -516,11 +516,7 @@ pre_post_titres <- function(pre_titre,
                             param2=2, # y offset
                             param3=0.3, # gradient
                             param4=0 # linear term
-){
-  
-  post_titre <- param2 + exp(param3*(pre_titre-param1)) + param4*pre_titre
-  return(post_titre)
-}
+){ post_titre <- param2 + exp(param3*(pre_titre-param1)) + param4*pre_titre; return(post_titre) }
 
 # Plot results for non converging titre-independent set points ------------------------------------------------------------
 
@@ -539,9 +535,8 @@ hist(initial_distribution,breaks=seq(0,1.1*max(initial_distribution),0.5),xlab="
 hist(initial_distribution2,breaks=seq(0,1.1*max(initial_distribution2),0.5),col=rgb(0,0,1,0.5),xlim=c(0,7),add=T)
 
 # Plot pre-to-post titre function
-plot(pre_titre,pre_post_titres(pre_titre,param1,param2,param3,param4),xlim=c(0,8),ylim=c(0,6),xaxs="i",yaxs="i",
-     bty="l",col="dark blue",type="l",lwd=2,xlab="pre-infection titre",ylab="post titre",
-     main="Pre-to-post function")
+pre_titre <- seq(0,10,0.1)
+plot(pre_titre,pre_post_titres(pre_titre,param1,param2,param3,param4),xlim=c(0,8),ylim=c(0,6),xaxs="i",yaxs="i",bty="l",col="dark blue",type="l",lwd=2,xlab="pre-infection titre",ylab="post titre",main="Pre-to-post function")
 lines(pre_titre,pre_titre,lty=2)
 
 # Plot titres after 1 additional wave of infection
